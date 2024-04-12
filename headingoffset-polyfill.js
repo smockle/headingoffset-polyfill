@@ -1,11 +1,17 @@
 // @ts-check
 
+const ariaLevelObserver = new MutationObserver(function (mutationList) {
+  for (const mutation of mutationList) {
+    headingsWithModifiedLevels.delete(mutation.target);
+  }
+});
+
 if (!("headingOffset" in Element.prototype)) {
   // Reflect the 'headingoffset' attribute.
   Object.defineProperty(Element.prototype, "headingOffset", {
     enumerable: true,
     get: function () {
-      return this.getAttribute("headingoffset") ?? "0";
+      return Number(this.getAttribute("headingoffset") ?? 0);
     },
     set: function (headingOffset) {
       if (
@@ -16,7 +22,7 @@ if (!("headingOffset" in Element.prototype)) {
         this.removeAttribute("headingoffset");
         return;
       }
-      this.setAttribute("headingoffset", String(headingOffset));
+      this.setAttribute("headingoffset", headingOffset);
     },
   });
 
@@ -32,7 +38,7 @@ if (!("headingOffset" in Element.prototype)) {
           // If a container with a 'headingoffset' attribute is added, apply offsets to its headings.
           else if (
             addedNode instanceof HTMLElement &&
-            addedNode.headingOffset > 0
+            addedNode.querySelector("[headingOffset], h1, h2, h3, h4, h5, h6")
           ) {
             applyHeadingOffsets(addedNode);
           }
@@ -52,6 +58,11 @@ if (!("headingOffset" in Element.prototype)) {
     childList: true,
     subtree: true,
   });
+
+  ariaLevelObserver.observe(document.body, {
+    attributeFilter: ["aria-level"],
+    subtree: true,
+  });
 }
 
 /**
@@ -67,13 +78,19 @@ function applyHeadingOffsets(container) {
   }
 }
 
+/** Track headings whose 'aria-level' is set by the polyfill. */
+const headingsWithModifiedLevels = new WeakSet();
+
 /**
  * Applies an offset to a heading, if needed.
  * @param {Element} heading A heading element.
  */
 function applyHeadingOffset(heading) {
-  // If 'aria-level' is already set, don’t change it.
-  if (heading.hasAttribute("aria-level")) {
+  // If 'aria-level' is already set and the polyfill didn’t set it, don’t change it.
+  if (
+    heading.hasAttribute("aria-level") &&
+    !headingsWithModifiedLevels.has(heading)
+  ) {
     return;
   }
 
@@ -87,6 +104,8 @@ function applyHeadingOffset(heading) {
   }
 
   heading.setAttribute("aria-level", String(ariaLevel));
+  ariaLevelObserver.takeRecords();
+  headingsWithModifiedLevels.add(heading);
 }
 
 /**
