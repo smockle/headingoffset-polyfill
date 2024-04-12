@@ -170,6 +170,38 @@
             expect(h1A.getAttribute("aria-level")).to.equal("1");
             expect(h1B.getAttribute("aria-level")).to.equal("3");
           });
+          it("nested, 1 offset (offset removed later)", async () => {
+            await setup({
+              headingOffset: 1,
+              innerHTML: `
+               <h1 id="h1A" aria-level="1">Level 1</h1>
+               <h1 id="h1B">Level 2</h1>`,
+            });
+            expect(h1A.getAttribute("aria-level")).to.equal("1");
+            expect(h1B.getAttribute("aria-level")).to.equal("2");
+            container.headingOffset = 0;
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            expect(h1A.getAttribute("aria-level")).to.equal("1");
+            expect(h1B.hasAttribute("aria-level")).to.equal(false);
+          });
+          it("nested, 1 offset (offset removed later, and then re-added even later)", async () => {
+            await setup({
+              headingOffset: 1,
+              innerHTML: `
+               <h1 id="h1A" aria-level="1">Level 1</h1>
+               <h1 id="h1B">Level 2</h1>`,
+            });
+            expect(h1A.getAttribute("aria-level")).to.equal("1");
+            expect(h1B.getAttribute("aria-level")).to.equal("2");
+            container.headingOffset = 0;
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            expect(h1A.getAttribute("aria-level")).to.equal("1");
+            expect(h1B.hasAttribute("aria-level")).to.equal(false);
+            container.headingOffset = 3;
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            expect(h1A.getAttribute("aria-level")).to.equal("1");
+            expect(h1B.getAttribute("aria-level")).to.equal("4");
+          });
           it("nested, 1 offset (aria-level updated later (not by polyfill))", async () => {
             await setup({
               headingOffset: 1,
@@ -185,6 +217,17 @@
             await new Promise((resolve) => setTimeout(resolve, 0));
             expect(h1A.getAttribute("aria-level")).to.equal("6");
             expect(h1B.getAttribute("aria-level")).to.equal("6");
+          });
+          it("nested, 1 offset (aria-level removed later (not by polyfill))", async () => {
+            await setup({
+              headingOffset: 1,
+              innerHTML: `
+               <h1 id="h1A" aria-level="1">Level 1</h1>`,
+            });
+            expect(h1A.getAttribute("aria-level")).to.equal("1");
+            h1A.removeAttribute("aria-level");
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            expect(h1A.getAttribute("aria-level")).to.equal("2");
           });
         });
 
