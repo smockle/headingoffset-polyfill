@@ -1,5 +1,7 @@
 # headingoffset-polyfill
 
+[![codecov](https://codecov.io/gh/smockle/headingoffset-polyfill/graph/badge.svg?token=gylmWj0rMR)](https://codecov.io/gh/smockle/headingoffset-polyfill)
+
 Polyfill for the `headingoffset` attribute. Related discussion in https://github.com/whatwg/html/issues/5033.
 
 ## Usage
