@@ -2,7 +2,21 @@
 
 const ariaLevelObserver = new MutationObserver(function (mutationList) {
   for (const mutation of mutationList) {
-    headingsWithModifiedLevels.delete(mutation.target);
+    if (
+      mutation.target instanceof Element &&
+      mutation.target.matches("h1, h2, h3, h4, h5, h6")
+    ) {
+      // 'aria-level' was modified
+      // 'aria-level' was added
+      if (mutation.target.hasAttribute("aria-level")) {
+        stopManagingHeading(mutation.target); // (it’ll get re-added if the polyfill made this change)
+      }
+      // 'aria-level' was removed
+      else {
+        startManagingHeading(mutation.target);
+        applyHeadingOffset(mutation.target);
+      }
+    }
   }
 });
 
@@ -79,7 +93,16 @@ function applyHeadingOffsets(container) {
 }
 
 /** Track headings whose 'aria-level' is set by the polyfill. */
-const headingsWithModifiedLevels = new WeakSet();
+const managedHeadings = new WeakSet();
+function isManagedHeading(heading) {
+  return managedHeadings.has(heading);
+}
+function startManagingHeading(heading) {
+  managedHeadings.add(heading);
+}
+function stopManagingHeading(heading) {
+  managedHeadings.delete(heading);
+}
 
 /**
  * Applies an offset to a heading, if needed.
@@ -87,10 +110,7 @@ const headingsWithModifiedLevels = new WeakSet();
  */
 function applyHeadingOffset(heading) {
   // If 'aria-level' is already set and the polyfill didn’t set it, don’t change it.
-  if (
-    heading.hasAttribute("aria-level") &&
-    !headingsWithModifiedLevels.has(heading)
-  ) {
+  if (heading.hasAttribute("aria-level") && !isManagedHeading(heading)) {
     return;
   }
 
@@ -98,14 +118,15 @@ function applyHeadingOffset(heading) {
   const offset = getHeadingOffset(heading, 9 - level);
   const ariaLevel = level + offset;
 
-  // If the level wouldn’t change, don’t set 'aria-level'.
+  // If the level wouldn’t change, don’t set 'aria-level', and remove it if it’s redundant.
   if (ariaLevel === level) {
+    heading.removeAttribute("aria-level");
     return;
   }
 
   heading.setAttribute("aria-level", String(ariaLevel));
   ariaLevelObserver.takeRecords();
-  headingsWithModifiedLevels.add(heading);
+  startManagingHeading(heading);
 }
 
 /**
