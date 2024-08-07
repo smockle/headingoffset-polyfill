@@ -44,6 +44,10 @@
             container.headingOffset = "fish";
             expect(container.headingOffset).to.equal(0);
           });
+          it("allows negative values", () => {
+            container.headingOffset = -1;
+            expect(container.headingOffset).to.equal(-1);
+          });
           it("setting via JS affects HTML", () => {
             container.headingOffset = 1;
             expect(container.getAttribute("headingoffset")).to.equal("1");
