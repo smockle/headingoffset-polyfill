@@ -25,7 +25,8 @@ if (!("headingOffset" in Element.prototype)) {
   Object.defineProperty(Element.prototype, "headingOffset", {
     enumerable: true,
     get: function () {
-      return Number(this.getAttribute("headingoffset") ?? 0);
+      const value = Number(this.getAttribute("headingoffset") ?? 0);
+      return Number.isNaN(value) ? 0 : value;
     },
     set: function (headingOffset) {
       if (

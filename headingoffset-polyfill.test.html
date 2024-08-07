@@ -40,6 +40,10 @@
           it("default value when unset", () => {
             expect(container.headingOffset).to.equal(0);
           });
+          it("default value when invalid", () => {
+            container.headingOffset = "fish";
+            expect(container.headingOffset).to.equal(0);
+          });
           it("setting via JS affects HTML", () => {
             container.headingOffset = 1;
             expect(container.getAttribute("headingoffset")).to.equal("1");
