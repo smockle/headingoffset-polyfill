@@ -27,7 +27,7 @@ if (!("headingOffset" in Element.prototype)) {
     get: function () {
       const defaultValue = 0;
       const value = Number(this.getAttribute("headingoffset"));
-      return Number.isNaN(value) ? defaultValue : value;
+      return !Number.isNaN(value) && value > 0 ? value : defaultValue;
     },
     set: function (headingOffset) {
       if (
