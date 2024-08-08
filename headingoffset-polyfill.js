@@ -1,5 +1,7 @@
 // @ts-check
 
+const managedHeadings = new WeakSet();
+
 const ariaLevelObserver = new MutationObserver(function (mutationList) {
   for (const mutation of mutationList) {
     if (
@@ -69,16 +71,18 @@ if (!("headingOffset" in Element.prototype)) {
         applyHeadingOffsets(mutation.target);
       }
     }
-  }).observe(document.body, {
+  }).observe(document.documentElement, {
     attributeFilter: ["headingoffset"],
     childList: true,
     subtree: true,
   });
 
-  ariaLevelObserver.observe(document.body, {
+  ariaLevelObserver.observe(document.documentElement, {
     attributeFilter: ["aria-level"],
     subtree: true,
   });
+
+  applyHeadingOffsets(document.documentElement);
 }
 
 /**
@@ -95,7 +99,6 @@ function applyHeadingOffsets(container) {
 }
 
 /** Track headings whose 'aria-level' is set by the polyfill. */
-const managedHeadings = new WeakSet();
 function isManagedHeading(heading) {
   return managedHeadings.has(heading);
 }

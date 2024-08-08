@@ -1,0 +1,17 @@
+<html>
+  <head>
+    <script async src="./headingoffset-polyfill.js"></script>
+  </head>
+  <body>
+    <div id="existing-container" headingoffset="1">
+      <h1 id="existing-h1">Level 2</h1>
+      <h2 id="existing-h2">Level 3</h2>
+    </div>
+    <div id="container"></div>
+    <script type="module">
+      import { runTests } from "@web/test-runner-mocha";
+      import { tests } from "./headingoffset-polyfill.test.js";
+      await runTests(tests);
+    </script>
+  </body>
+</html>
