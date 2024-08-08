@@ -71,13 +71,13 @@ if (!("headingOffset" in Element.prototype)) {
         applyHeadingOffsets(mutation.target);
       }
     }
-  }).observe(document.body, {
+  }).observe(document.documentElement, {
     attributeFilter: ["headingoffset"],
     childList: true,
     subtree: true,
   });
 
-  ariaLevelObserver.observe(document.body, {
+  ariaLevelObserver.observe(document.documentElement, {
     attributeFilter: ["aria-level"],
     subtree: true,
   });
