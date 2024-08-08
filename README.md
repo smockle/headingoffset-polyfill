@@ -12,6 +12,9 @@ Add the polyfill:
 <script src="headingoffset-polyfill.js"></script>
 ```
 
+> [!NOTE]
+> The script will scan the existing document and monitor for changes after that.
+
 Use `headingoffset`:
 
 ```html
