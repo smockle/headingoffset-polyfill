@@ -1,5 +1,9 @@
 <html>
   <body>
+    <div id="existing-container" headingoffset="1">
+      <h1 id="existing-h1">Level 2</h1>
+      <h2 id="existing-h2">Level 3</h2>
+    </div>
     <div id="container"></div>
     <script type="module">
       import { expect } from "@esm-bundle/chai";
@@ -28,6 +32,18 @@
         // Reset headingOffset and innerHTML before each test
         beforeEach(async () => {
           await setup();
+        });
+
+        describe("existing DOM", () => {
+          it("handles existing DOM", () => {
+            const container = document.getElementById("existing-container");
+            const h1 = document.getElementById("existing-h1");
+            const h2 = document.getElementById("existing-h2");
+            expect(h1.getAttribute("aria-level")).to.equal("2");
+            expect(h2.getAttribute("aria-level")).to.equal("3");
+            // Delete existing container element
+            container.parentNode.removeChild(container);
+          });
         });
 
         describe("reflection", () => {
