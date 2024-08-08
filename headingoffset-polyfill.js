@@ -5,8 +5,7 @@ const managedHeadings = new WeakSet();
 const ariaLevelObserver = new MutationObserver(function (mutationList) {
   for (const mutation of mutationList) {
     if (
-      mutation.target instanceof Element &&
-      mutation.target.matches("h1, h2, h3, h4, h5, h6")
+      mutation.target instanceof HTMLHeadingElement
     ) {
       // 'aria-level' was modified
       // 'aria-level' was added
