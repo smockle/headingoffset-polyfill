@@ -9,7 +9,7 @@ Polyfill for the `headingoffset` attribute. Related discussion in https://github
 Add the polyfill:
 
 ```html
-<script type="module" src="headingoffset-polyfill.js"></script>
+<script src="headingoffset-polyfill.js"></script>
 ```
 
 Use `headingoffset`:
