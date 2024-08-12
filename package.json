@@ -13,6 +13,6 @@
   "license": "MIT",
   "devDependencies": {
     "@esm-bundle/chai": "^4.3.4-fix.0",
-    "@web/test-runner": "^0.18.2"
+    "@web/test-runner": "^0.18.3"
   }
 }
