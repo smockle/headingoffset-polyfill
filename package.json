@@ -6,7 +6,7 @@
   "module": "headingoffset-polyfill.js",
   "type": "module",
   "scripts": {
-    "test": "web-test-runner headingoffset-polyfill*.test.html --coverage --node-resolve"
+    "test": "web-test-runner"
   },
   "keywords": [],
   "author": "Clay Miller <clay@smockle.com> (https://www.smockle.com/)",

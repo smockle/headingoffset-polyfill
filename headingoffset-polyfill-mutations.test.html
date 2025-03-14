@@ -1,0 +1,44 @@
+<html>
+  <body>
+    <div id="headingOffsetMutation" headingoffset="3">
+      <h1><!-- Level 2 --></h1>
+    </div>
+    <div headingoffset="1">
+      <h1 id="ariaLevelMutation" aria-level="3"><!-- Level 2 --></h1>
+    </div>
+    <div headingoffset="3">
+      <h1 id="ariaLevelRemoval" aria-level="6"><!-- Level 4 --></h1>
+    </div>
+    <template id="headingOffsetAddition">
+      <div id="headingOffsetNestedAddition" headingoffset="3">
+        <h1><!-- Level 4 --></h1>
+        <h1 aria-level="2"><!-- Level 2 --></h1>
+      </div>
+    </template>
+    <script>
+      globalThis.readyForTests = new Promise((resolve) => {
+        window.setTimeout(() => {
+          // Change `headingoffset` from 3 to 1
+          headingOffsetMutation.setAttribute("headingoffset", "1");
+
+          // Change `aria-level` from 3 to 2
+          ariaLevelMutation.setAttribute("aria-level", "2");
+
+          // Remove `aria-level`
+          ariaLevelRemoval.removeAttribute("aria-level");
+
+          // Insert an element with `headingoffset`
+          // Insert an element with `aria-level`
+          document.body.append(headingOffsetAddition.content.cloneNode(true));
+
+          // Insert a heading
+          const headingAddition = document.createElement("h2");
+          headingAddition.innerHTML = "<!-- Level 5 -->";
+          headingOffsetNestedAddition.append(headingAddition);
+
+          resolve();
+        }, 100);
+      });
+    </script>
+  </body>
+</html>

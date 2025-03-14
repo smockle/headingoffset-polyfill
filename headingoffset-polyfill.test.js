@@ -1,298 +1,87 @@
 import { expect } from "@esm-bundle/chai";
 
-async function setup({ headingOffset, innerHTML } = { innerHTML: "" }) {
-  // Delete existing container element
-  container.parentNode.removeChild(container);
-
-  // Create new container element
-  const newContainer = document.createElement("div");
-  newContainer.id = "container";
-  if (headingOffset) {
-    newContainer.headingOffset = headingOffset;
-  }
-  if (typeof innerHTML === "string") {
-    newContainer.innerHTML = innerHTML;
-  }
-  document.body.appendChild(newContainer);
-
-  // Wait for mutation observer callback to finish
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
 export async function tests() {
-  // Reset headingOffset and innerHTML before each test
-  beforeEach(async () => {
-    await setup();
-  });
-
-  describe("existing DOM", () => {
-    it("handles existing DOM", () => {
-      const container = document.getElementById("existing-container");
-      const h1 = document.getElementById("existing-h1");
-      const h2 = document.getElementById("existing-h2");
-      expect(h1.getAttribute("aria-level")).to.equal("2");
-      expect(h2.getAttribute("aria-level")).to.equal("3");
-      // Delete existing container element
-      container.parentNode.removeChild(container);
+  describe("heading levels", () => {
+    it("calculated levels match expected values in comments in light DOM", () => {
+      let count = 0;
+      for (const heading of document.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
+        const commentText = heading.firstChild?.nodeValue;
+        /* c8 ignore next 3 */
+        if (!commentText || heading.firstChild.nodeType !== Node.COMMENT_NODE) {
+          throw new Error("Comment text not found");
+        }
+        const expectedLevel = commentText.match(/Level (\d)/)[1];
+        expect(heading.getAttribute("aria-level"), heading.outerHTML).to.equal(
+          expectedLevel
+        );
+        count++;
+      }
+      /* c8 ignore next 1 */
+      expect(count).to.be.above(0);
+    });
+    it("calculated levels match expected values in comments in shadow DOM", () => {
+      let count = 0;
+      for (const root of document.querySelectorAll("[title*=shadowroot]")) {
+        for (const heading of root.shadowRoot.querySelectorAll(
+          "h1,h2,h3,h4,h5,h6"
+        )) {
+          const commentText = heading.firstChild?.nodeValue;
+          /* c8 ignore next 6 */
+          if (
+            !commentText ||
+            heading.firstChild.nodeType !== Node.COMMENT_NODE
+          ) {
+            throw new Error("Comment text not found");
+          }
+          const expectedLevel = commentText.match(/Level (\d)/)[1];
+          expect(
+            heading.getAttribute("aria-level"),
+            heading.outerHTML
+          ).to.equal(expectedLevel);
+          count++;
+        }
+        /* c8 ignore next 2 */
+        expect(count).to.be.above(0);
+      }
     });
   });
 
-  describe("reflection", () => {
-    it("'headingOffset' property exists", () => {
-      expect("headingOffset" in container).to.equal(true);
+  describe("headingoffset", () => {
+    let container, initialOffset;
+    beforeEach(() => {
+      container = document.querySelector("[headingoffset]");
+      initialOffset = container.getAttribute("headingoffset");
     });
-    it("default value when unset", () => {
-      expect(container.headingOffset).to.equal(0);
+    afterEach(() => {
+      container.setAttribute("headingoffset", initialOffset);
     });
-    it("default value when invalid", () => {
-      container.headingOffset = "fish";
-      expect(container.headingOffset).to.equal(0);
+    it("offsets have matching IDL", () => {
+      let count = 0;
+      for (const container of document.querySelectorAll("[headingoffset]")) {
+        expect("headingOffset" in container).to.equal(true);
+        expect(container.headingOffset, container.outerHTML).to.equal(
+          Math.min(Math.max(container.getAttribute("headingoffset"), 0), 9)
+        );
+        count++;
+      }
+      expect(count).to.be.above(0);
     });
-    it("default value when negative", () => {
-      container.headingOffset = -1;
-      expect(container.headingOffset).to.equal(0);
-    });
-    it("setting via JS affects HTML", () => {
+    it("setting via JS affects HTML, and vice-versa", function () {
       container.headingOffset = 1;
       expect(container.getAttribute("headingoffset")).to.equal("1");
-      container.headingOffset = undefined;
-      expect(container.hasAttribute("headingoffset")).to.equal(false);
-      container.headingOffset = null;
-      expect(container.hasAttribute("headingoffset")).to.equal(false);
-      container.headingOffset = "";
-      expect(container.hasAttribute("headingoffset")).to.equal(false);
-    });
-    it("setting via HTML affects JS", () => {
       container.setAttribute("headingoffset", "2");
       expect(container.headingOffset).to.equal(2);
-    });
-  });
-
-  describe("expected values", async () => {
-    it("unnested (all heading levels)", async () => {
-      await setup({
-        innerHTML: `
-               <h1 id="h1">Level 1</h1>
-               <h2 id="h2">Level 2</h2>
-               <h3 id="h3">Level 3</h3>
-               <h4 id="h4">Level 4</h4>
-               <h5 id="h5">Level 5</h5>
-               <h6 id="h6">Level 6</h6>`,
-      });
-      expect(h1.hasAttribute("aria-level")).to.equal(false);
-      expect(h2.hasAttribute("aria-level")).to.equal(false);
-      expect(h3.hasAttribute("aria-level")).to.equal(false);
-      expect(h4.hasAttribute("aria-level")).to.equal(false);
-      expect(h5.hasAttribute("aria-level")).to.equal(false);
-      expect(h6.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, 1 offset (3 of the same heading level)", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h2 id="h2A">Level 3</h2>
-               <h2 id="h2B">Level 3</h2>
-               <h2 id="h2C">Level 3</h2>`,
-      });
-      expect(h2A.getAttribute("aria-level")).to.equal("3");
-      expect(h2B.getAttribute("aria-level")).to.equal("3");
-      expect(h2C.getAttribute("aria-level")).to.equal("3");
-    });
-    it("nested, 1 offset (all heading levels)", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1">Level 2</h1>
-               <h2 id="h2">Level 3</h2>
-               <h3 id="h3">Level 4</h3>
-               <h4 id="h4">Level 5</h4>
-               <h5 id="h5">Level 6</h5>
-               <h6 id="h6">Level 7</h6>`,
-      });
-      expect(h1.getAttribute("aria-level")).to.equal("2");
-      expect(h2.getAttribute("aria-level")).to.equal("3");
-      expect(h3.getAttribute("aria-level")).to.equal("4");
-      expect(h4.getAttribute("aria-level")).to.equal("5");
-      expect(h5.getAttribute("aria-level")).to.equal("6");
-      expect(h6.getAttribute("aria-level")).to.equal("7");
-    });
-    it("nested, 6 offset (doesn’t overflow past supported levels)", async () => {
-      await setup({
-        headingOffset: 6,
-        innerHTML: `
-               <h1 id="h1">Level 7</h1>
-               <h2 id="h2">Level 8</h2>
-               <h3 id="h3">Level 9</h3>
-               <h4 id="h4">Level 4</h4>
-               <h5 id="h5">Level 5</h5>
-               <h6 id="h6">Level 6</h6>`,
-      });
-      expect(h1.getAttribute("aria-level")).to.equal("7");
-      expect(h2.getAttribute("aria-level")).to.equal("8");
-      expect(h3.getAttribute("aria-level")).to.equal("9");
-      expect(h4.hasAttribute("aria-level")).to.equal(false);
-      expect(h5.hasAttribute("aria-level")).to.equal(false);
-      expect(h6.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, 2 offset (ignores 'aria-level' and 'role=heading')", async () => {
-      await setup({
-        headingOffset: 2,
-        innerHTML: `
-               <h1 id="h1" aria-level="1">Level 1</h1>
-               <div id="div" role="heading">Level 2</div>`,
-      });
-      expect(h1.getAttribute("aria-level")).to.equal("1");
-      expect(div.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, 1 offset (adds another heading later)", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1">Level 2</h1>`,
-      });
-      expect(h1.getAttribute("aria-level")).to.equal("2");
-      const h2 = document.createElement("h2");
-      h2.id = "h2";
-      container.appendChild(h2);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h2.getAttribute("aria-level")).to.equal("3");
-    });
-    it("deeply nested, 1 offset (grandchild has the attribute)", async () => {
-      await setup({
-        innerHTML: `
-                <div>
-                  <div headingoffset="1">
-                    <h1 id="h1">Level 2</h1>
-                  </div>
-                </div>`,
-      });
-      expect(h1.getAttribute("aria-level")).to.equal("2");
-    });
-    it("nested, 1 offset (offset updated later)", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1A" aria-level="1">Level 1</h1>
-               <h1 id="h1B">Level 2</h1>`,
-      });
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.getAttribute("aria-level")).to.equal("2");
-      container.headingOffset = 2;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.getAttribute("aria-level")).to.equal("3");
-    });
-    it("nested, 1 offset (offset removed later)", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1A" aria-level="1">Level 1</h1>
-               <h1 id="h1B">Level 2</h1>`,
-      });
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.getAttribute("aria-level")).to.equal("2");
-      container.headingOffset = 0;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, 1 offset (offset removed later, and then re-added even later)", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1A" aria-level="1">Level 1</h1>
-               <h1 id="h1B">Level 2</h1>`,
-      });
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.getAttribute("aria-level")).to.equal("2");
-      container.headingOffset = 0;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.hasAttribute("aria-level")).to.equal(false);
-      container.headingOffset = 3;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.getAttribute("aria-level")).to.equal("4");
-    });
-    it("nested, 1 offset (aria-level updated later (not by polyfill))", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1A" aria-level="1">Level 1</h1>
-               <h1 id="h1B">Level 2</h1>`,
-      });
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      expect(h1B.getAttribute("aria-level")).to.equal("2");
-      h1A.setAttribute("aria-level", "6");
-      h1B.setAttribute("aria-level", "6");
-      container.headingOffset = 2;
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h1A.getAttribute("aria-level")).to.equal("6");
-      expect(h1B.getAttribute("aria-level")).to.equal("6");
-    });
-    it("nested, 1 offset (aria-level removed later (not by polyfill))", async () => {
-      await setup({
-        headingOffset: 1,
-        innerHTML: `
-               <h1 id="h1A" aria-level="1">Level 1</h1>`,
-      });
-      expect(h1A.getAttribute("aria-level")).to.equal("1");
-      h1A.removeAttribute("aria-level");
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(h1A.getAttribute("aria-level")).to.equal("2");
-    });
-  });
-
-  describe("weird values", async () => {
-    it("nested, 0 offset", async () => {
-      await setup({
-        headingOffset: 0,
-        innerHTML: `
-               <h1 id="h1">Level 1</h1>
-               <h2 id="h2">Level 2</h2>`,
-      });
-      expect(h1.hasAttribute("aria-level")).to.equal(false);
-      expect(h2.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, -1 offset", async () => {
-      await setup({
-        headingOffset: -1,
-        innerHTML: `
-               <h1 id="h1">Level 1</h1>
-               <h2 id="h2">Level 2</h2>`,
-      });
-      expect(h1.hasAttribute("aria-level")).to.equal(false);
-      expect(h2.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, 10 offset", async () => {
-      await setup({
-        headingOffset: 10,
-        innerHTML: `
-               <h1 id="h1">Level 1</h1>
-               <h2 id="h2">Level 2</h2>`,
-      });
-      expect(h1.hasAttribute("aria-level")).to.equal(false);
-      expect(h2.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, NaN offset", async () => {
-      await setup({
-        headingOffset: NaN,
-        innerHTML: `
-               <h1 id="h1">Level 1</h1>
-               <h2 id="h2">Level 2</h2>`,
-      });
-      expect(h1.hasAttribute("aria-level")).to.equal(false);
-      expect(h2.hasAttribute("aria-level")).to.equal(false);
-    });
-    it("nested, Infinity offset", async () => {
-      await setup({
-        headingOffset: Infinity,
-        innerHTML: `
-               <h1 id="h1">Level 1</h1>
-               <h2 id="h2">Level 2</h2>`,
-      });
-      expect(h1.hasAttribute("aria-level")).to.equal(false);
-      expect(h2.hasAttribute("aria-level")).to.equal(false);
+      container.headingOffset = undefined;
+      expect(container.hasAttribute("headingoffset")).to.equal(false);
+      expect(container.headingOffset).to.equal(0);
+      container.headingOffset = null;
+      expect(container.hasAttribute("headingoffset")).to.equal(false);
+      expect(container.headingOffset).to.equal(0);
+      container.headingOffset = "";
+      expect(container.hasAttribute("headingoffset")).to.equal(false);
+      expect(container.headingOffset).to.equal(0);
+      container.headingOffset = "fish";
+      expect(container.headingOffset).to.equal(0);
     });
   });
 }
