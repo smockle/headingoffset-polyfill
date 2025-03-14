@@ -4,9 +4,7 @@ const managedHeadings = new WeakSet();
 
 const ariaLevelObserver = new MutationObserver(function (mutationList) {
   for (const mutation of mutationList) {
-    if (
-      mutation.target instanceof HTMLHeadingElement
-    ) {
+    if (mutation.target instanceof HTMLHeadingElement) {
       // 'aria-level' was modified
       // 'aria-level' was added
       if (mutation.target.hasAttribute("aria-level")) {
@@ -26,9 +24,8 @@ if (!("headingOffset" in Element.prototype)) {
   Object.defineProperty(Element.prototype, "headingOffset", {
     enumerable: true,
     get: function () {
-      const defaultValue = 0;
       const value = Number(this.getAttribute("headingoffset"));
-      return !Number.isNaN(value) && value > 0 ? value : defaultValue;
+      return Math.min(Math.max(value || 0, 0), 9);
     },
     set: function (headingOffset) {
       if (
