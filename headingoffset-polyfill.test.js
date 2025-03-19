@@ -2,29 +2,16 @@ import { expect } from "@esm-bundle/chai";
 
 export async function tests() {
   describe("heading levels", () => {
-    it("calculated levels match expected values in comments in light DOM", () => {
+    it("calculated levels match expected values in comments", () => {
       let count = 0;
-      for (const heading of document.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
-        const commentText = heading.firstChild?.nodeValue;
-        /* c8 ignore next 3 */
-        if (!commentText || heading.firstChild.nodeType !== Node.COMMENT_NODE) {
-          throw new Error("Comment text not found");
-        }
-        const expectedLevel = commentText.match(/Level (\d)/)[1];
-        expect(heading.getAttribute("aria-level"), heading.outerHTML).to.equal(
-          expectedLevel
-        );
-        count++;
-      }
-      /* c8 ignore next 1 */
-      expect(count).to.be.above(0);
-    });
-    it("calculated levels match expected values in comments in shadow DOM", () => {
-      let count = 0;
-      for (const root of document.querySelectorAll("[title*=shadowroot]")) {
-        for (const heading of root.shadowRoot.querySelectorAll(
-          "h1,h2,h3,h4,h5,h6"
-        )) {
+      const roots = [
+        document,
+        ...Array.from(document.querySelectorAll("[title*=shadowroot]")).map(
+          (el) => el.shadowRoot
+        ),
+      ];
+      for (const root of roots) {
+        for (const heading of root.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
           const commentText = heading.firstChild?.nodeValue;
           /* c8 ignore next 6 */
           if (
@@ -36,11 +23,11 @@ export async function tests() {
           const expectedLevel = commentText.match(/Level (\d)/)[1];
           expect(
             heading.getAttribute("aria-level"),
-            heading.outerHTML
+            root.outerHTML + "\n" + heading.outerHTML
           ).to.equal(expectedLevel);
           count++;
         }
-        /* c8 ignore next 2 */
+        /* c8 ignore next 1 */
         expect(count).to.be.above(0);
       }
     });
