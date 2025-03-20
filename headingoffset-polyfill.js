@@ -42,15 +42,9 @@ const headingObserver = new MutationObserver((mutations) => {
         ) {
           getHeadings(node).forEach((heading) => updateAriaLevel(heading));
         }
-        // If a shadow root is added (or a node with shadow root children), observe it
+        // If a shadow root is added, observe it
         if (node.shadowRoot) {
           observeRoot(node.shadowRoot);
-        }
-        const elementsWithShadow = node.querySelectorAll("*");
-        for (const element of elementsWithShadow) {
-          if (element.shadowRoot) {
-            observeRoot(element.shadowRoot);
-          }
         }
       }
     } else if (
