@@ -1,4 +1,3 @@
-/* c8 ignore start */
 import { expect } from "@esm-bundle/chai";
 
 export async function tests() {
@@ -14,12 +13,14 @@ export async function tests() {
       for (const root of roots) {
         for (const heading of root.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
           const commentText = heading.firstChild?.nodeValue;
+          /* c8 ignore start */
           if (
             !commentText ||
             heading.firstChild.nodeType !== Node.COMMENT_NODE
           ) {
             throw new Error("Comment text not found");
           }
+          /* c8 ignore stop */
           const expectedLevel = commentText.match(/Level (\d)/)[1];
           const actualLevel = heading.hasAttribute("aria-level")
             ? heading.getAttribute("aria-level")

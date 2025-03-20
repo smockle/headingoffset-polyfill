@@ -207,10 +207,12 @@ function computeHeadingOffset(heading, maxOffset) {
 
 // Initialize the polyfill
 (() => {
+  /* c8 ignore start */
   // Early-return (without polyfilling) if 'headingoffset' is natively-supported
   if ("headingOffset" in Element.prototype) {
     return;
   }
+  /* c8 ignore stop */
 
   // Define 'headingOffset' IDL attribute
   Object.defineProperty(Element.prototype, "headingOffset", {
