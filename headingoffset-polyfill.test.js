@@ -75,4 +75,34 @@ export async function tests() {
       expect(container.headingOffset).to.equal(0);
     });
   });
+
+  describe("headingreset", () => {
+    let container, initialReset;
+    beforeEach(() => {
+      container = document.querySelector("body");
+      initialReset = container.hasAttribute("headingreset");
+    });
+    afterEach(() => {
+      if (initialReset) {
+        container.setAttribute("headingreset", "");
+      }
+    });
+    it("setting via JS affects HTML, and vice-versa", function () {
+      container.headingReset = "headingreset";
+      expect(container.getAttribute("headingreset")).to.equal("");
+      expect(container.headingReset).to.equal(true);
+      container.headingReset = undefined;
+      expect(container.hasAttribute("headingreset")).to.equal(false);
+      expect(container.headingReset).to.equal(false);
+      container.headingReset = null;
+      expect(container.hasAttribute("headingreset")).to.equal(false);
+      expect(container.headingReset).to.equal(false);
+      container.setAttribute("headingreset", "");
+      expect(container.hasAttribute("headingreset")).to.equal(true);
+      expect(container.headingReset).to.equal(true);
+      container.headingReset = "fish";
+      expect(container.getAttribute("headingreset")).to.equal("");
+      expect(container.headingReset).to.equal(true);
+    });
+  });
 }
