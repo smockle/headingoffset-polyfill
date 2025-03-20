@@ -31,28 +31,24 @@ const headingObserver = new MutationObserver((mutations) => {
         if (!(node instanceof HTMLElement)) {
           continue;
         }
-        // If a heading is added, update its 'aria-level' attribute
+        // If a heading is added (or a node with heading children), update its 'aria-level' attribute
         if (node instanceof HTMLHeadingElement) {
           updateAriaLevel(node);
-        }
-        // If a container with relevant attributes is added, update child headings’ 'aria-level' attributes
-        else if (
+        } else if (
           node.querySelector(
             "h1, h2, h3, h4, h5, h6, [headingoffset], [headingreset]"
           )
         ) {
           getHeadings(node).forEach((heading) => updateAriaLevel(heading));
         }
-        // Observe roots in added nodes
+        // If a shadow root is added (or a node with shadow root children), observe it
         if (node.shadowRoot) {
           observeRoot(node.shadowRoot);
         }
-        // Observe roots in added declarative shadow DOM
-        const templates = node.querySelectorAll("template[shadowrootmode]");
-        for (const template of templates) {
-          const host = template.parentNode;
-          if (host instanceof HTMLElement && host.shadowRoot) {
-            observeRoot(host.shadowRoot);
+        const elementsWithShadow = node.querySelectorAll("*");
+        for (const element of elementsWithShadow) {
+          if (element.shadowRoot) {
+            observeRoot(element.shadowRoot);
           }
         }
       }
