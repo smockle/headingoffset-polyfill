@@ -10,6 +10,7 @@ const observedRoots = new WeakSet();
 const ariaLevelObserver = new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     if (!(mutation.target instanceof HTMLHeadingElement)) continue;
+    if (mutation.type !== "attributes") continue;
 
     const heading = mutation.target;
     if (heading.hasAttribute("aria-level")) {
