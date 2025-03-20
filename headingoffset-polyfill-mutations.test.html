@@ -16,6 +16,13 @@
       </div>
     </template>
     <div id="shadowRootAddition"></div>
+    <closed-shadow-host>
+      <template shadowrootmode="closed">
+        <div headingoffset="2">
+          <h1><!-- Level 3 --></h1>
+        </div>
+      </template>
+    </closed-shadow-host>
     <script>
       globalThis.readyForTests = new Promise((resolve) => {
         window.setTimeout(() => {
@@ -68,6 +75,16 @@
           `;
           hostParent.append(childShadowHost);
           document.body.append(hostParent);
+
+          // Test a closed shadow root
+          class ClosedShadowHost extends HTMLElement {
+            static formAssociated = true;
+            constructor() {
+              super();
+              this.internals = this.attachInternals();
+            }
+          }
+          customElements.define("closed-shadow-host", ClosedShadowHost);
 
           resolve();
         }, 100);
