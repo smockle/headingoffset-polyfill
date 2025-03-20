@@ -77,15 +77,9 @@ export async function tests() {
   });
 
   describe("headingreset", () => {
-    let container, initialReset;
+    let container;
     beforeEach(() => {
       container = document.querySelector("body");
-      initialReset = container.hasAttribute("headingreset");
-    });
-    afterEach(() => {
-      if (initialReset) {
-        container.setAttribute("headingreset", "");
-      }
     });
     it("setting via JS affects HTML, and vice-versa", function () {
       container.headingReset = "headingreset";
