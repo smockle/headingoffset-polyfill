@@ -1,157 +1,274 @@
 // @ts-check
 
+// Track headings with polyfill-managed 'aria-level' attributes
 const managedHeadings = new WeakSet();
 
-const ariaLevelObserver = new MutationObserver(function (mutationList) {
-  for (const mutation of mutationList) {
-    if (
-      mutation.target instanceof HTMLHeadingElement
-    ) {
-      // 'aria-level' was modified
-      // 'aria-level' was added
-      if (mutation.target.hasAttribute("aria-level")) {
-        stopManagingHeading(mutation.target); // (it’ll get re-added if the polyfill made this change)
-      }
-      // 'aria-level' was removed
-      else {
-        startManagingHeading(mutation.target);
-        applyHeadingOffset(mutation.target);
-      }
+// Track observed roots
+const observedRoots = new WeakSet();
+
+/** Handle 'aria-level' attribute changes */
+const ariaLevelObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    if (!(mutation.target instanceof HTMLHeadingElement)) continue;
+    if (mutation.type !== "attributes") continue;
+
+    const heading = mutation.target;
+    if (heading.hasAttribute("aria-level")) {
+      // Attribute was added or modified - stop managing unless we did it
+      managedHeadings.delete(heading);
+    } else {
+      // Attribute was removed - start managing and reapply
+      updateAriaLevel(heading);
     }
   }
 });
 
-if (!("headingOffset" in Element.prototype)) {
-  // Reflect the 'headingoffset' attribute.
-  Object.defineProperty(Element.prototype, "headingOffset", {
-    enumerable: true,
-    get: function () {
-      const defaultValue = 0;
-      const value = Number(this.getAttribute("headingoffset"));
-      return !Number.isNaN(value) && value > 0 ? value : defaultValue;
-    },
-    set: function (headingOffset) {
-      if (
-        headingOffset === "" ||
-        headingOffset === null ||
-        headingOffset === undefined
-      ) {
-        this.removeAttribute("headingoffset");
-        return;
-      }
-      this.setAttribute("headingoffset", headingOffset);
-    },
-  });
-
-  new MutationObserver(function (mutationList) {
-    for (const mutation of mutationList) {
-      if (mutation.type === "childList") {
-        for (const addedNode of mutation.addedNodes) {
-          // If a heading is added, apply its offset.
-          if (addedNode instanceof HTMLHeadingElement) {
-            applyHeadingOffset(addedNode);
-          }
-
-          // If a container with a 'headingoffset' attribute is added, apply offsets to its headings.
-          else if (
-            addedNode instanceof HTMLElement &&
-            addedNode.querySelector("[headingOffset], h1, h2, h3, h4, h5, h6")
-          ) {
-            applyHeadingOffsets(addedNode);
-          }
+/** Handle changes to 'headingoffset' and 'headingreset' attributes and DOM structure */
+const headingObserver = new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    if (mutation.type === "childList") {
+      // Handle added nodes
+      for (const node of mutation.addedNodes) {
+        if (!(node instanceof HTMLElement)) {
+          continue;
+        }
+        // If a heading is added (or a node with heading children), update its 'aria-level' attribute
+        if (node instanceof HTMLHeadingElement) {
+          updateAriaLevel(node);
+        } else if (
+          node.querySelector(
+            "h1, h2, h3, h4, h5, h6, [headingoffset], [headingreset]"
+          )
+        ) {
+          getHeadings(node).forEach((heading) => updateAriaLevel(heading));
+        }
+        // If a shadow root is added, observe it
+        if (node.shadowRoot) {
+          observeRoot(node.shadowRoot);
         }
       }
-
-      // If a container’s 'headingoffset' attribute changes, reapply offsets.
-      else if (
-        mutation.type === "attributes" &&
-        mutation.target instanceof HTMLElement
-      ) {
-        applyHeadingOffsets(mutation.target);
-      }
+    } else if (
+      mutation.type === "attributes" &&
+      mutation.target instanceof HTMLElement
+    ) {
+      // If a container's attributes change, update child headings’ 'aria-level' attributes
+      getHeadings(mutation.target).forEach((heading) =>
+        updateAriaLevel(heading)
+      );
     }
-  }).observe(document.documentElement, {
-    attributeFilter: ["headingoffset"],
-    childList: true,
-    subtree: true,
-  });
+  }
+});
 
-  ariaLevelObserver.observe(document.documentElement, {
+/**
+ * Watch a document or shadow root for changes
+ * @param {Document|ShadowRoot} root A document or shadow root
+ */
+function observeRoot(root) {
+  // Early-return if the root is already observed
+  if (observedRoots.has(root)) {
+    return;
+  }
+  observedRoots.add(root);
+
+  ariaLevelObserver.observe(root, {
     attributeFilter: ["aria-level"],
     subtree: true,
   });
 
-  applyHeadingOffsets(document.documentElement);
+  headingObserver.observe(root, {
+    attributeFilter: ["headingoffset", "headingreset"],
+    childList: true,
+    subtree: true,
+  });
+
+  getHeadings(root).forEach((heading) => updateAriaLevel(heading));
 }
 
 /**
- * Applies offsets all headings in a container, where needed.
- * @param {Element} container A container element.
+ * Get a container’s child headings
+ * @param {Element|Document|ShadowRoot} container
+ * @returns {HTMLHeadingElement[]} An array of heading elements
  */
-function applyHeadingOffsets(container) {
+function getHeadings(container) {
+  /** Get child headings @type {HTMLHeadingElement[]} */
   const headings = Array.from(
     container.querySelectorAll("h1, h2, h3, h4, h5, h6")
   );
-  for (const heading of headings) {
-    applyHeadingOffset(heading);
+  // Add headings in shadow roots
+  for (const element of container.querySelectorAll("*")) {
+    if (element.shadowRoot) {
+      /** @type {HTMLHeadingElement[]} */
+      const shadowHeadings = Array.from(
+        element.shadowRoot.querySelectorAll("h1, h2, h3, h4, h5, h6")
+      );
+      headings.push(...shadowHeadings);
+    }
   }
-}
-
-/** Track headings whose 'aria-level' is set by the polyfill. */
-function isManagedHeading(heading) {
-  return managedHeadings.has(heading);
-}
-function startManagingHeading(heading) {
-  managedHeadings.add(heading);
-}
-function stopManagingHeading(heading) {
-  managedHeadings.delete(heading);
+  return headings;
 }
 
 /**
- * Applies an offset to a heading, if needed.
- * @param {Element} heading A heading element.
+ * Updates a heading’s 'aria-level' attribute, based on its offset
+ * @param {HTMLHeadingElement} heading
  */
-function applyHeadingOffset(heading) {
-  // If 'aria-level' is already set and the polyfill didn’t set it, don’t change it.
-  if (heading.hasAttribute("aria-level") && !isManagedHeading(heading)) {
+function updateAriaLevel(heading) {
+  // Early-return if 'aria-level' was not set by the polyfill
+  if (heading.hasAttribute("aria-level") && !managedHeadings.has(heading)) {
     return;
   }
 
-  const level = Number(heading.tagName[1]);
-  const offset = getHeadingOffset(heading, 9 - level);
-  const ariaLevel = level + offset;
+  const tagLevel = Number(heading.tagName[1]);
+  const offset = computeHeadingOffset(heading, 9 - tagLevel);
+  const ariaLevel = tagLevel + offset;
 
-  // If the level wouldn’t change, don’t set 'aria-level', and remove it if it’s redundant.
-  if (ariaLevel === level) {
+  // Don’t set 'aria-level' if it’s redundant
+  if (ariaLevel === tagLevel) {
     heading.removeAttribute("aria-level");
     return;
   }
 
   heading.setAttribute("aria-level", String(ariaLevel));
-  ariaLevelObserver.takeRecords();
-  startManagingHeading(heading);
+  ariaLevelObserver.takeRecords(); // Prevent observer loop
+  managedHeadings.add(heading);
 }
 
 /**
- * Determines the number of levels to offset a heading’s level, by summing the 'headingoffset' attributes of all its parents.
- * If the offset would be greater than the maximum offset, returns 0.
- * @param {Element} heading A heading element.
- * @returns {number} Number of levels (0 or above) to offset the heading.
+ * Determines whether an element is explicitly (via the 'headingreset' attribute)
+ * or implicitly (as a modal dialog) a 'headingoffset' accumulation boundary.
+ * @param {Element} element
+ * @returns {boolean}
  */
-function getHeadingOffset(heading, maxOffset) {
-  let offset = 0;
-
-  let ancestor = heading.parentNode;
-  while (ancestor && ancestor instanceof HTMLElement) {
-    const ancestorHeadingOffset = Number(
-      ancestor.getAttribute("headingoffset")
+function isOffsetBoundary(element) {
+  // Modal dialogs implicitly reset heading levels
+  if (element instanceof HTMLDialogElement) {
+    return (
+      element.open && element.hasAttribute("open") && element.matches(":modal")
     );
-    // Don’t allow negative offsets.
-    if (!Number.isNaN(ancestorHeadingOffset) && ancestorHeadingOffset > 0)
-      offset += ancestorHeadingOffset;
-    ancestor = ancestor.parentNode;
+  }
+  return element.hasAttribute("headingreset");
+}
+
+/**
+ * Compute the heading’s offset (from its 'tagName' level) by summing its ancestors’
+ * 'headingoffset' attributes, up to a 'headingreset' boundary.
+ * @param {Element} heading A heading element.
+ * @param {number} maxOffset Maximum offset to apply (0-9).
+ * @returns {number} Number of levels (0 to 'maxOffset') to offset the heading.
+ */
+function computeHeadingOffset(heading, maxOffset) {
+  // Early-return if the heading is (itself) a boundary
+  if (isOffsetBoundary(heading)) {
+    return Math.min(heading.headingOffset || 0, maxOffset);
   }
 
-  return offset <= maxOffset ? offset : 0;
+  // Accumulate 'headingoffset' values upwards, handling shadow boundaries and slots
+  let offset = heading.headingOffset || 0;
+  let ancestor = heading;
+  while (ancestor) {
+    // Move to parent (or assigned slot, or shadow host)
+    if (ancestor.assignedSlot) {
+      ancestor = ancestor.assignedSlot;
+    } else if (ancestor.parentElement) {
+      ancestor = ancestor.parentElement;
+    } else if (ancestor.getRootNode() instanceof ShadowRoot) {
+      ancestor = ancestor.getRootNode().host;
+    } else {
+      break;
+    }
+
+    // Add this element's offset
+    offset += ancestor.headingOffset || 0;
+
+    // Early-return if the ancestor is a boundary
+    if (isOffsetBoundary(ancestor)) {
+      return Math.min(offset, maxOffset);
+    }
+
+    // Early-return if the maximum offset is reached
+    if (offset >= maxOffset) {
+      return maxOffset;
+    }
+  }
+
+  return Math.min(offset, maxOffset);
 }
+
+// Initialize the polyfill
+(() => {
+  /* c8 ignore start */
+  // Early-return (without polyfilling) if 'headingoffset' is natively-supported
+  if ("headingOffset" in Element.prototype) {
+    return;
+  }
+  /* c8 ignore stop */
+
+  // Define 'headingOffset' IDL attribute
+  Object.defineProperty(Element.prototype, "headingOffset", {
+    get() {
+      const value = Number(this.getAttribute("headingoffset"));
+      return Math.min(Math.max(value || 0, 0), 9);
+    },
+    set(value) {
+      if (value === undefined || value === null || value === "") {
+        this.removeAttribute("headingoffset");
+      } else {
+        if (!isNaN(Number(value))) {
+          this.setAttribute("headingoffset", value);
+        }
+      }
+    },
+    enumerable: true,
+  });
+
+  // Define 'headingReset' IDL attribute
+  Object.defineProperty(Element.prototype, "headingReset", {
+    get() {
+      return this.hasAttribute("headingreset");
+    },
+    set(value) {
+      if (value === undefined || value === null || value === "") {
+        this.removeAttribute("headingreset");
+      } else {
+        this.setAttribute("headingreset", "");
+      }
+    },
+    enumerable: true,
+  });
+
+  // Patch 'attachShadow' to handle (future) shadow roots
+  const originalAttachShadow = Element.prototype.attachShadow;
+  Object.defineProperty(Element.prototype, "attachShadow", {
+    value: function (...args) {
+      const shadowRoot = originalAttachShadow.call(this, ...args);
+      observeRoot(shadowRoot);
+      return shadowRoot;
+    },
+  });
+
+  // Patch 'attachInternals' to handle (future) closed declarative shadow roots
+  const originalAttachInternals = HTMLElement.prototype.attachInternals;
+  Object.defineProperty(HTMLElement.prototype, "attachInternals", {
+    value: function () {
+      const internals = originalAttachInternals.call(this);
+      if (internals.shadowRoot) {
+        window.setTimeout(() => {
+          observeRoot(internals.shadowRoot);
+        }, 0);
+      }
+      return internals;
+    },
+  });
+
+  // Handle document and current shadow roots
+  function findAndObserveShadowRoots(root) {
+    const elements = root.querySelectorAll("*");
+    for (const element of elements) {
+      if (element.shadowRoot) {
+        observeRoot(element.shadowRoot);
+        findAndObserveShadowRoots(element.shadowRoot);
+      }
+    }
+  }
+  observeRoot(document);
+  findAndObserveShadowRoots(document);
+})();
