@@ -150,8 +150,7 @@ function isOffsetBoundary(element) {
     return (
       element.open &&
       element.hasAttribute("open") &&
-      (element.matches(":modal") ||
-        element.ownerDocument.querySelector(":modal") === element)
+      element.matches(":modal")
     );
   }
   return element.hasAttribute("headingreset");
