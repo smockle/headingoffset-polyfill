@@ -1,6 +1,6 @@
 {
   "name": "headingoffset-polyfill",
-  "version": "1.0.0",
+  "version": "0.0.0-development",
   "description": "",
   "main": "headingoffset-polyfill.js",
   "module": "headingoffset-polyfill.js",
