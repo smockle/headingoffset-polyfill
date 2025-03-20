@@ -37,13 +37,23 @@
           headingAddition.innerHTML = "<!-- Level 5 -->";
           headingOffsetNestedAddition.append(headingAddition);
 
-          // Insert a shadow root
+          // Attach a shadow root
           const shadowRoot = shadowRootAddition.attachShadow({ mode: "open" });
           shadowRoot.innerHTML = `
             <div headingoffset="2">
               <h2><!-- Level 4 --></h2>
             </div>
           `;
+
+          // Insert a shadow host
+          const shadowHost = document.createElement("div");
+          const shadowHostRoot = shadowHost.attachShadow({ mode: "open" });
+          shadowHostRoot.innerHTML = `
+            <div headingoffset="2">
+              <h2><!-- Level 4 --></h2>
+            </div>
+          `;
+          document.body.append(shadowHost);
 
           resolve();
         }, 100);
