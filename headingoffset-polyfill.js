@@ -247,7 +247,7 @@ function computeHeadingOffset(heading, maxOffset) {
   const originalAttachShadow = Element.prototype.attachShadow;
   Object.defineProperty(Element.prototype, "attachShadow", {
     value: function (...args) {
-      const shadowRoot = originalAttachShadow.call(this, args);
+      const shadowRoot = originalAttachShadow.call(this, ...args);
       observeRoot(shadowRoot);
       return shadowRoot;
     },
