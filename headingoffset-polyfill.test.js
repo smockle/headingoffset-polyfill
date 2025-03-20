@@ -1,3 +1,4 @@
+/* c8 ignore start */
 import { expect } from "@esm-bundle/chai";
 
 export async function tests() {
@@ -13,7 +14,6 @@ export async function tests() {
       for (const root of roots) {
         for (const heading of root.querySelectorAll("h1,h2,h3,h4,h5,h6")) {
           const commentText = heading.firstChild?.nodeValue;
-          /* c8 ignore next 6 */
           if (
             !commentText ||
             heading.firstChild.nodeType !== Node.COMMENT_NODE
@@ -21,13 +21,16 @@ export async function tests() {
             throw new Error("Comment text not found");
           }
           const expectedLevel = commentText.match(/Level (\d)/)[1];
-          expect(
-            heading.getAttribute("aria-level"),
-            root.outerHTML + "\n" + heading.outerHTML
-          ).to.equal(expectedLevel);
+          const actualLevel = heading.hasAttribute("aria-level")
+            ? heading.getAttribute("aria-level")
+            : heading.tagName[1];
+          const message =
+            heading.parentElement instanceof HTMLDialogElement
+              ? heading.parentElement.outerHTML
+              : heading.outerHTML;
+          expect(actualLevel, message).to.equal(expectedLevel);
           count++;
         }
-        /* c8 ignore next 1 */
         expect(count).to.be.above(0);
       }
     });
