@@ -238,10 +238,10 @@ function computeHeadingOffset(heading, maxOffset) {
       return this.hasAttribute("headingreset");
     },
     set(value) {
-      if (value) {
-        this.setAttribute("headingreset", "");
-      } else {
+      if (value === undefined || value === null || value === "") {
         this.removeAttribute("headingreset");
+      } else {
+        this.setAttribute("headingreset", "");
       }
     },
     enumerable: true,
