@@ -1,5 +1,6 @@
 # headingoffset-polyfill
 
+[![npm](https://img.shields.io/npm/v/headingoffset-polyfill.svg)](https://www.npmjs.com/package/headingoffset-polyfill)
 [![codecov](https://codecov.io/gh/smockle/headingoffset-polyfill/graph/badge.svg?token=gylmWj0rMR)](https://codecov.io/gh/smockle/headingoffset-polyfill)
 
 Polyfill for the `headingoffset` attribute. Related discussion in https://github.com/whatwg/html/issues/5033.
