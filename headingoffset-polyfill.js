@@ -245,6 +245,20 @@ function computeHeadingOffset(heading, maxOffset) {
     },
   });
 
+  // Patch 'attachInternals' to handle (future) closed declarative shadow roots
+  const originalAttachInternals = HTMLElement.prototype.attachInternals;
+  Object.defineProperty(HTMLElement.prototype, "attachInternals", {
+    value: function () {
+      const internals = originalAttachInternals.call(this);
+      if (internals.shadowRoot) {
+        window.setTimeout(() => {
+          observeRoot(internals.shadowRoot);
+        }, 0);
+      }
+      return internals;
+    },
+  });
+
   // Handle document and current shadow roots
   function findAndObserveShadowRoots(root) {
     const elements = root.querySelectorAll("*");
