@@ -148,9 +148,7 @@ function isOffsetBoundary(element) {
   // Modal dialogs implicitly reset heading levels
   if (element instanceof HTMLDialogElement) {
     return (
-      element.open &&
-      element.hasAttribute("open") &&
-      element.matches(":modal")
+      element.open && element.hasAttribute("open") && element.matches(":modal")
     );
   }
   return element.hasAttribute("headingreset");
