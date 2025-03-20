@@ -55,6 +55,20 @@
           `;
           document.body.append(shadowHost);
 
+          // Insert a child shadow host
+          const hostParent = document.createElement("div");
+          const childShadowHost = document.createElement("div");
+          const childShadowRoot = childShadowHost.attachShadow({
+            mode: "open",
+          });
+          childShadowRoot.innerHTML = `
+            <div headingoffset="2">
+              <h2><!-- Level 4 --></h2>
+            </div>
+          `;
+          hostParent.append(childShadowHost);
+          document.body.append(hostParent);
+
           resolve();
         }, 100);
       });
