@@ -15,6 +15,7 @@
         <h1 aria-level="2"><!-- Level 2 --></h1>
       </div>
     </template>
+    <div id="shadowRootAddition"></div>
     <script>
       globalThis.readyForTests = new Promise((resolve) => {
         window.setTimeout(() => {
@@ -35,6 +36,14 @@
           const headingAddition = document.createElement("h2");
           headingAddition.innerHTML = "<!-- Level 5 -->";
           headingOffsetNestedAddition.append(headingAddition);
+
+          // Insert a shadow root
+          const shadowRoot = shadowRootAddition.attachShadow({ mode: "open" });
+          shadowRoot.innerHTML = `
+            <div headingoffset="2">
+              <h2><!-- Level 4 --></h2>
+            </div>
+          `;
 
           resolve();
         }, 100);
