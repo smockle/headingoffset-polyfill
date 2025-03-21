@@ -16,7 +16,7 @@
       </div>
     </template>
     <div id="shadowRootAddition"></div>
-    <closed-shadow-host>
+    <closed-shadow-host title="container shadowroot with closed shadowroot">
       <template shadowrootmode="closed">
         <div headingoffset="2">
           <h1><!-- Level 3 --></h1>
@@ -78,10 +78,12 @@
 
           // Test a closed shadow root
           class ClosedShadowHost extends HTMLElement {
-            static formAssociated = true;
             constructor() {
               super();
               this.internals = this.attachInternals();
+            }
+            get shadowRoot() {
+              return this.internals.shadowRoot;
             }
           }
           customElements.define("closed-shadow-host", ClosedShadowHost);
